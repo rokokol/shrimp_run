@@ -231,7 +231,7 @@ void move_entity(int i) {
       screen.write(SHRIMP_DEAD);
       return;
     } else {
-      screen.write(random(SEAWEED_1, SEAWEED_2));  // Seaweed animation
+      screen.write(random(SEAWEED_1, SEAWEED_2 + 1));  // Seaweed animation
     }
   }
   screen.print(" ");

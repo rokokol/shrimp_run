@@ -1,2 +1,27 @@
-# shrimp_run
-Google dinosaur is the last century. True art connoisseurs play their Shrimp Run tetris 😎
+# Shrimp Run
+
+![Пример работы](https://github.com/user-attachments/assets/0bf552fb-6338-403e-bc10-594b6acae78c)
+---
+## О ПРОЕКТЕ 🦐
+Веселая времяубивался в стиле легендарного Google Dino. Можно прыгать, можно проигрывать, можно оффлайн
+### КАК ИГРАТЬ 🎮
+- 💡 Вкл/Выкл подсветку — **одиночное нажатие на джойский**
+- 🔄 Рестарт — **двойное нажатие на джойский**
+- ⬆️ Прыжок — **Полсвайпа джойстика вверх**
+- ⬆️⬆️ Высокой прыжок — **Целый свайп джойстика вверх**
+### КАК СОБРАТЬ СХЕМУ? 🛠️
+---
+![Схема](https://github.com/user-attachments/assets/ee01e12c-bd8f-431a-a726-4eb12cf998fc)
+---
+### ЗАВИСИМОСТИ 📦
+- 🔘 [OneButton](https://github.com/mathertel/OneButton)
+- 🖥️ [LiquidCrystal_I2C](https://github.com/johnrickman/LiquidCrystal_I2C)
+- 🕹️ [GyverJoy](https://github.com/GyverLibs/GyverJoy)
+---
+## ПЛАНЫ ✅
+- [ ] 🖼️ Переделать на LCD2004, улучшить графику
+- [ ] 💦 Добавить пузыри — альтернатива птерадактелей в оригинале
+- [ ] 🔊 Добавить звуковое сопровождение
+- [ ] 🗃️ Сделать корпус, возможность взять с собой куда-либо
+## ЗАКЛЮЧЕНИЕ 💯
+Ну, что тут сказать... Have fun!

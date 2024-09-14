@@ -180,7 +180,9 @@ void update_entities() {
   update_seaweeds();
 
   screen.setCursor(HERO_POS_X, hero[0]);
-  if (ticks % 2) {  // Walking animation
+  if (game_over) {
+    screen.write(SHRIMP_DEAD);
+  } else if (ticks % 2) {  // Walking animation
     screen.write(SHRIMP_1);
   } else {
     screen.write(SHRIMP_2);
@@ -263,7 +265,6 @@ void move_seaweed_spot(int i) {
   for (int i = 0; i < entity[1] && entity[0] + i <= START_SCREEN; i++) {
     if (hero[0] == FLOOR && entity[0] + i == HERO_POS_X) {
       game_over = true;
-      screen.write(SHRIMP_DEAD);
       return;
     } else {
       screen.write(random(SEAWEED_1, SEAWEED_2 + 1));  // Seaweed animation

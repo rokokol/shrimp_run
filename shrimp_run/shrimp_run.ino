@@ -11,11 +11,10 @@
 #define INITIAL_SPEED 500
 #define SPEED_STEP 1
 #define MAX_SPEED 80
-#define HERO_POS_X 4
-#define ONE_CHANCE 6     // The higher, the lower the chance of double and triple
-#define DOUBLE_CHANCE 9  // The higher, the lower the chance of triple
-#define SPAWN_DURATION 4
-#define SPAWN_CHANCE 4
+#define BLINKS_COUNT 6  // Blinks count when game over
+#define GAME_OVER_INDENT 5
+
+#define HERO_POS_X 3
 #define FLOOR 2
 #define JUMP 1
 #define JUMP_TYPE 1
@@ -24,11 +23,18 @@
 #define JUMP_COEF 2         // How much JUMP_DURATIONs per one jump
 #define BIG_JUMP_COEF 3     // How much JUMP_DURATIONs per one big jump
 #define BIG_JUMP_START 254  // Joystick position for double jump
-#define BLINKS_COUNT 6      // Blinks count when game over
-#define GAME_OVER_INDENT 5
-#define FISH_START 40         // Ticks amount needed to spawn fishes
-#define SEAWEEDS_MAX_COUNT 5  // Maximum number of seaweed spots on the screen
-#define FISHES_MAX_COUNT 2    // Maximum number of fish on the screen
+
+#define ONE_CHANCE 6              // The higher, the lower the chance of double and triple
+#define DOUBLE_CHANCE 9           // The higher, the lower the chance of triple
+#define SPAWN_SEAWEED_DURATION 4  // Min count of ticks to spawn a new seaweed spot
+#define SPAWN_SEAWEED_CHANCE 4    // Chance to spawn is 1 / SPAWN_SEAWEED_CHANCE
+#define SEAWEEDS_MAX_COUNT 5      // Maximum number of seaweed spots on the screen
+
+#define SPAWN_FISH_DURATION 4  // Min count of ticks to spawn a new fish
+#define SPAWN_FISH_CHANCE 2    // Chance to spawn is 1 / SPAWN_FISH_CHANCE
+#define FISH_START 80           // Ticks amount needed to spawn fishes
+#define FISHES_MAX_COUNT 2     // Maximum number of fish on the screen
+
 
 // Sprites
 #define SHRIMP_1 0
@@ -46,20 +52,22 @@ OneButton butt(BUTTON_PIN, true, true);
 LiquidCrystal_I2C screen(0x27, 20, 4);
 
 
-// Arrays
+int hero[] = { FLOOR, 0 };
 int seaweeds[SEAWEEDS_MAX_COUNT][2];
 int fish[FISHES_MAX_COUNT];
-int hero[] = { FLOOR, 0 };
 
 // Variables
 ulong last_time = 0;
 ulong start_time = 0;
+int spawn_seaweed_tick = 0;
+int spawn_fish_tick = FISH_START;
 int ticks = 0;
-int spawn_tick = 0;
 int jump_tick = 0;
 int jump_type = 0;
+int prev_state = 0;
 int blinks = 0;
 int speed = INITIAL_SPEED;
+bool allow_fish;
 bool game_over = false;
 bool backlight = true;
 
@@ -71,13 +79,17 @@ void setup() {
   screen.init();
   screen.backlight();
   init_chars(screen);
+  reset_types();
+
   write_waves(0);
   write_ground();
 
   jy.calibrate();
   jy.exponent(GJ_CUBIC);
-  seaweeds[0][0] = START_SCREEN;
-  seaweeds[0][1] = 3;
+
+  // seaweeds[0][0] = START_SCREEN - 8;
+  // seaweeds[0][1] = 1;
+  // fish[0] = START_SCREEN;
 
   pinMode(4, INPUT_PULLUP);
   butt.attachClick(toggle_backlight);
@@ -101,8 +113,10 @@ void game_tick() {
   if (!game_over) {
     fix_jump();
 
-    if (delta < speed) return;
-    update_hero();
+    if (delta < speed) {
+      return;
+    }
+
     update_entities();
     update_ticks();
 
@@ -131,29 +145,6 @@ void game_tick() {
   }
 }
 
-void restart() {
-  screen.clear();
-  for (int i = 0; i < 5; i++) {
-    for (int j = 0; j < 2; j++) {
-      seaweeds[i][j] = 0;
-    }
-  }
-
-  write_waves(0);
-  write_ground();
-  hero[0] = FLOOR;
-  randomSeed(analogRead(A2));
-
-  last_time = 0;
-  start_time = millis();
-  spawn_tick = 0;
-  ticks = 0;
-  jump_tick = 0;
-  jump_type = 0;
-  blinks = 0;
-  speed = INITIAL_SPEED;
-  game_over = false;
-}
 
 // Udpates
 void update_ticks() {
@@ -172,12 +163,17 @@ void update_ticks() {
 }
 
 void update_entities() {
+  allow_fish = true;
+
+  update_hero();
+
   int erase_pos = hero[0] == FLOOR ? JUMP : FLOOR;
   screen.setCursor(HERO_POS_X, erase_pos);
   screen.print(' ');
 
-  if (ticks > FISH_START) update_fishes();
-  update_seaweeds();
+  update_seaweed_spots();
+  update_fish();
+  Serial.println("---");
 
   screen.setCursor(HERO_POS_X, hero[0]);
   if (game_over) {
@@ -186,37 +182,6 @@ void update_entities() {
     screen.write(SHRIMP_1);
   } else {
     screen.write(SHRIMP_2);
-  }
-}
-
-void update_fishes() {
-  // TODO: fish logic
-}
-
-void update_seaweeds() {
-  for (int i = 0; i < SEAWEEDS_MAX_COUNT; i++) {
-    if (seaweeds[i][0] <= -1) {
-      spawn_seaweed_spot(i);
-    } else {
-      move_seaweed_spot(i);
-      if (game_over) {
-        speed = INITIAL_SPEED;
-        return;
-      }
-    }
-  }
-}
-
-void update_hero() {
-  int j_coef = jump_type == JUMP_TYPE ? JUMP_COEF : BIG_JUMP_COEF;
-
-  if (jump_type != 0 && hero[0] == FLOOR) {
-    hero[0] = JUMP;
-    jump_type = jump_type == JUMP_TYPE ? JUMP_TYPE : BIG_JUMP_TYPE;
-    jump_tick = ticks;
-  } else if (hero[0] == JUMP && ticks - jump_tick >= JUMP_DURATION * j_coef) {
-    hero[0] = FLOOR;
-    jump_type = 0;
   }
 }
 
@@ -242,43 +207,6 @@ void fix_jump() {
   }
 }
 
-void spawn_seaweed_spot(int i) {
-  if (!random(0, SPAWN_CHANCE) && ticks - spawn_tick >= SPAWN_DURATION) {
-    seaweeds[i][0] = START_SCREEN;
-    int temp = random(10);
-    if (temp < ONE_CHANCE) {
-      seaweeds[i][1] = 1;
-    } else if (temp < DOUBLE_CHANCE) {
-      seaweeds[i][1] = 2;
-    } else {
-      seaweeds[i][1] = 3;
-    }
-
-    spawn_tick = ticks;
-  }
-}
-
-void move_seaweed_spot(int i) {
-  int* entity = seaweeds[i];
-
-  screen.setCursor(entity[0], FLOOR);
-  for (int i = 0; i < entity[1] && entity[0] + i <= START_SCREEN; i++) {
-    if (hero[0] == FLOOR && entity[0] + i == HERO_POS_X) {
-      game_over = true;
-      return;
-    } else {
-      screen.write(random(SEAWEED_1, SEAWEED_2 + 1));  // Seaweed animation
-    }
-  }
-  screen.print(" ");
-
-  if (entity[0] == 0 && entity[1] > 0) {
-    entity[1] -= 1;
-  } else {
-    entity[0] -= 1;
-  }
-}
-
 void write_waves(int indent) {
   screen.setCursor(indent, 0);
   for (int i = indent; i <= START_SCREEN; i++) {
@@ -291,4 +219,37 @@ void write_ground() {
   for (int i = 0; i <= START_SCREEN; i++) {
     screen.write(GROUND);
   }
+}
+
+void reset_types() {
+  for (int i = 0; i < SEAWEEDS_MAX_COUNT; i++) {
+    for (int j = 0; j < 2; j++) {
+      seaweeds[i][j] = -1;
+    }
+  }
+
+  for (int i = 0; i < FISHES_MAX_COUNT; i++) {
+    fish[i] = -2;
+  }
+}
+
+void restart() {
+  screen.clear();
+  reset_types();
+
+  write_waves(0);
+  write_ground();
+  hero[0] = FLOOR;
+  randomSeed(analogRead(A2));
+
+  last_time = 0;
+  start_time = millis();
+  spawn_seaweed_tick = 0;
+  spawn_fish_tick = FISH_START;
+  ticks = 0;
+  jump_tick = 0;
+  jump_type = 0;
+  blinks = 0;
+  speed = INITIAL_SPEED;
+  game_over = false;
 }

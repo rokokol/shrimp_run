@@ -7,12 +7,16 @@
 // Constants
 #define START_SCREEN 19
 #define BUTTON_PIN 2
+#define JX_PIN A0
 #define JY_PIN A1
+#define BUZZER_VCC_PIN 9
+#define BUZZER_PIN 4
 #define INITIAL_SPEED 500
 #define SPEED_STEP 1
 #define MAX_SPEED 80
 #define BLINKS_COUNT 6  // Blinks count when game over
 #define GAME_OVER_INDENT 5
+#define INITIAL_LOUD 500
 
 #define HERO_POS_X 3
 #define FLOOR 2
@@ -32,7 +36,7 @@
 
 #define SPAWN_FISH_DURATION 4  // Min count of ticks to spawn a new fish
 #define SPAWN_FISH_CHANCE 2    // Chance to spawn is 1 / SPAWN_FISH_CHANCE
-#define FISH_START 80           // Ticks amount needed to spawn fishes
+#define FISH_START 80          // Ticks amount needed to spawn fishes
 #define FISHES_MAX_COUNT 2     // Maximum number of fish on the screen
 
 
@@ -46,7 +50,25 @@
 #define GROUND 6
 #define FISH 7
 
+// Music
+#define STED_SOUND_DURAION 50
+#define STEP_SOUND_A 440
+#define STEP_SOUND_B 659
+#define LOSE_SOUND_DURATION 200
+#define DEAD_SOUND 146
+#define BLINK_SOUND_A 293
+#define BLINK_SOUND_B 349
+#define BLINK_SOUND_C 698
+#define JUMP_SOUND_DURATION 100
+#define JUMP_SOUND 523
+#define BIG_JUMP_SOUND 783
+#define LAND_SOUND 1046
+#define SCREEN_ON_SOUND 262
+#define SCREEN_OFF_SOUND 220
+#define TOGGLE_SCREEN_SOUND_DURATION 30
+
 // Classes
+GyverJoy jx(JX_PIN);
 GyverJoy jy(JY_PIN);
 OneButton butt(BUTTON_PIN, true, true);
 LiquidCrystal_I2C screen(0x27, 20, 4);
@@ -67,13 +89,17 @@ int jump_type = 0;
 int prev_state = 0;
 int blinks = 0;
 int speed = INITIAL_SPEED;
+int loud = INITIAL_LOUD;
 bool allow_fish;
 bool game_over = false;
 bool backlight = true;
+bool stop_flag = false;
 
 
 // Main functions
 void setup() {
+  set_PWM();
+
   randomSeed(analogRead(A2));
   Serial.begin(9600);
   screen.init();
@@ -85,6 +111,7 @@ void setup() {
   write_ground();
 
   jy.calibrate();
+  jx.calibrate();
   jy.exponent(GJ_CUBIC);
 
   // seaweeds[0][0] = START_SCREEN - 8;
@@ -94,10 +121,13 @@ void setup() {
   pinMode(4, INPUT_PULLUP);
   butt.attachClick(toggle_backlight);
   butt.attachDoubleClick(restart);
+  pinMode(BUZZER_VCC_PIN, OUTPUT);
+  analogWrite(BUZZER_VCC_PIN, loud);
 }
 
 void loop() {
   butt.tick();
+  // music_tick();
   game_tick();
 }
 
@@ -117,23 +147,28 @@ void game_tick() {
       return;
     }
 
+    noTone(BUZZER_PIN);
     update_entities();
     update_ticks();
 
     last_time = millis();
   } else if (game_over && delta >= speed && blinks < BLINKS_COUNT) {
+
     screen.setCursor(GAME_OVER_INDENT, 0);
     if (blinks % 2 == 1) {
       screen.print("GAME");
       screen.setCursor(GAME_OVER_INDENT + 6, 0);
       screen.print("OVER");
+      tone(BUZZER_PIN, BLINK_SOUND_A, LOSE_SOUND_DURATION);
     } else {
       write_waves(GAME_OVER_INDENT);
+      tone(BUZZER_PIN, BLINK_SOUND_B, LOSE_SOUND_DURATION);
     }
+
     toggle_backlight();
     last_time = millis();
     blinks += 1;
-  } else if (game_over && delta >= speed && blinks >= BLINKS_COUNT) {
+  } else if (!stop_flag && game_over && delta >= speed && blinks >= BLINKS_COUNT) {
     screen.setCursor(0, 3);
     screen.print("2x");
     screen.write(GROUND);
@@ -142,6 +177,8 @@ void game_tick() {
     screen.print("FOR");
     screen.write(GROUND);
     screen.print("RESTART");
+    stop_flag = true;
+    tone(BUZZER_PIN, BLINK_SOUND_C, LOSE_SOUND_DURATION * 2);
   }
 }
 
@@ -176,33 +213,39 @@ void update_entities() {
   Serial.println("---");
 
   screen.setCursor(HERO_POS_X, hero[0]);
+  bool sound_cond = hero[0] == FLOOR && prev_state == FLOOR;
   if (game_over) {
     screen.write(SHRIMP_DEAD);
-  } else if (ticks % 2) {  // Walking animation
+    tone(BUZZER_PIN, DEAD_SOUND, LOSE_SOUND_DURATION);
+  } else if (ticks % 2 == 0 && sound_cond) {  // Walking animation
     screen.write(SHRIMP_1);
-  } else {
+    tone(BUZZER_PIN, STEP_SOUND_A, STED_SOUND_DURAION);
+  } else if (ticks % 2 == 1 && sound_cond) {
     screen.write(SHRIMP_2);
+    tone(BUZZER_PIN, STEP_SOUND_B, STED_SOUND_DURAION);
+  } else {
+    screen.write(SHRIMP_1);
   }
 }
+
+// void music_tick() {
+//   if (!game_over) {
+//     subway_tick();
+//   }
+// }
 
 // Help functions
 void toggle_backlight() {
   backlight = !backlight;
   if (backlight) {
     screen.backlight();
+    if (!game_over) {
+      tone(BUZZER_PIN, SCREEN_ON_SOUND, TOGGLE_SCREEN_SOUND_DURATION);
+    }
   } else {
     screen.noBacklight();
-  }
-}
-
-void fix_jump() {
-  if (jump_type != BIG_JUMP_TYPE && jy.tick()) {
-    int j_val = -jy.value();
-
-    if (j_val >= BIG_JUMP_START) {
-      jump_type = BIG_JUMP_TYPE;
-    } else if (j_val > 0) {
-      jump_type = JUMP_TYPE;
+    if (!game_over) {
+      tone(BUZZER_PIN, SCREEN_OFF_SOUND, TOGGLE_SCREEN_SOUND_DURATION);
     }
   }
 }
@@ -252,4 +295,10 @@ void restart() {
   blinks = 0;
   speed = INITIAL_SPEED;
   game_over = false;
+  stop_flag = false;
+}
+
+void set_PWM() {
+  TCCR1A = 0b00000001;
+  TCCR1B = 0b00001001;
 }

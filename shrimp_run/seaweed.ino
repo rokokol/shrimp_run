@@ -38,9 +38,8 @@ void move_seaweed_spot(int n) {
       game_over = true;
       return;
     } else {
-      if (seaweed_pos == START_SCREEN - 8) {
+      if (seaweed_pos == START_SCREEN - 8 || seaweed_pos == START_SCREEN - 7) {
         allow_fish = false;
-        Serial.println("block");
       }
 
       screen.write(random(SEAWEED_1, SEAWEED_2 + 1));  // Seaweed animation

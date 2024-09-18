@@ -214,12 +214,12 @@ void toggle_backlight() {
   backlight = !backlight;
   if (backlight) {
     screen.backlight();
-    if (!game_over) {
+    if (!game_over || blinks >= BLINKS_COUNT) {
       tone(BUZZER_PIN, SCREEN_ON_SOUND, TOGGLE_SCREEN_SOUND_DURATION);
     }
   } else {
     screen.noBacklight();
-    if (!game_over) {
+    if (!game_over || blinks >= BLINKS_COUNT) {
       tone(BUZZER_PIN, SCREEN_OFF_SOUND, TOGGLE_SCREEN_SOUND_DURATION);
     }
   }

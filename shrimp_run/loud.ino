@@ -42,7 +42,7 @@ void fix_loud() {
 }
 
 void loud_tick() {
-  int delta = millis() - last_loud_time;
+  ulong delta = millis() - last_loud_time;
   if (delta >= LOUD_TICK) {
     fix_loud();  // To be less annoying I put it on a level below than fix_jump()
 

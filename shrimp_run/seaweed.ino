@@ -5,6 +5,7 @@ void update_seaweed_spots() {
     } else {
       move_seaweed_spot(i);
       if (game_over) {
+        prev_speed = speed;
         speed = initial_speed;
         return;
       }

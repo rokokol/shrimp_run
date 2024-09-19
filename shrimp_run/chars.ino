@@ -1,6 +1,6 @@
-#include <LiquidCrystal_I2C.h>
-
 // Chars
+int texture_shift = 0;
+
 byte shrimp_1_sprite[] = {
   B00000,
   B00000,
@@ -90,12 +90,12 @@ byte fish_sprite[] = {
 };
 
 void init_chars(LiquidCrystal_I2C lcd) {
-  lcd.createChar(0, shrimp_1_sprite);
-  lcd.createChar(1, shrimp_2_sprite);
-  lcd.createChar(2, shrimp_dead_sprite);
-  lcd.createChar(3, seaweed_1_sprite);
-  lcd.createChar(4, seaweed_2_sprite);
-  lcd.createChar(5, wave_sprite);
-  lcd.createChar(6, ground_sprite);
-  lcd.createChar(7, fish_sprite);
+  lcd.createChar(0 + texture_shift, shrimp_1_sprite);
+  lcd.createChar(1 + texture_shift, shrimp_2_sprite);
+  lcd.createChar(2 + texture_shift, shrimp_dead_sprite);
+  lcd.createChar(3 + texture_shift, seaweed_1_sprite);
+  lcd.createChar(4 + texture_shift, seaweed_2_sprite);
+  lcd.createChar(5 + texture_shift, wave_sprite);
+  lcd.createChar(6 + texture_shift, ground_sprite);
+  lcd.createChar(7 + texture_shift, fish_sprite);
 }

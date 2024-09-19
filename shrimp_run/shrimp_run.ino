@@ -1,18 +1,21 @@
 #include <OneButton.h>
+#include <LiquidCrystal_I2C.h>
 #include <GyverJoy.h>
-#include "chars.h"
+#include "pitches.h"
 
 #define ulong unsigned long
 
 // Constants
 #define START_SCREEN 19
 #define BUTTON_PIN 2
-#define JX_PIN A0
-#define JY_PIN A1
+#define JX_PIN A1
+#define JY_PIN A0
 #define BUZZER_VCC_PIN 9
 #define BUZZER_PIN 4
+#define INITIAL_SPEED 500
 #define SPEED_STEP 1  // How fast is the speed increasing
 #define MAX_SPEED 80
+#define ULTRA_SPEED 40  // Only with cheats
 #define BLINKS_COUNT 6  // Blinks count when game over
 #define UPPER_MSG_INDENT 5
 #define INITIAL_LOUD_LEVEL 3  // From MIN_LOUD_LEVEL to MAX_LOUD_LEVEL inclusive
@@ -21,6 +24,13 @@
 #define LOUD_TICK 400
 #define LOUD_STICK_DEADZONE 256
 #define SHOW_LOUD_TICKS 4
+#define CHEATCODE_TICK 100
+#define NONE 0
+#define UP 1
+#define DOWN 2
+#define LEFT 3
+#define RIGHT 4
+#define QUEUE_LEN 8
 
 #define HERO_POS_X 3
 #define FLOOR 2
@@ -78,6 +88,8 @@
 #define INCREASE_LOUD_SOUND 392
 #define DECREASE_LOUD_SOUND 330
 #define CANNOT_CHANGE_LOUD_SOUND 164
+#define CHEATCODE_SOUND_DURATION 200
+#define CHEATCODE_SOUND 666
 
 // Classes
 GyverJoy jx(JX_PIN);
@@ -93,7 +105,7 @@ int fish[FISHES_MAX_COUNT];
 // Variables
 ulong last_time = 0;
 ulong start_time = 0;
-int initial_speed = 500;  // FPS = 1000 / SPEED
+int initial_speed = INITIAL_SPEED;  // FPS = 1000 / SPEED
 int spawn_seaweed_tick = 0;
 int spawn_fish_tick = FISH_START;
 int ticks = 0;
@@ -102,14 +114,19 @@ int jump_type = 0;
 int prev_state = 0;
 int blinks = 0;
 int speed = initial_speed;
+int prev_speed = speed;
 int loud_level = INITIAL_LOUD_LEVEL;
+int x = 0;
+int y = 0;
+int bonus_score = 0;
 bool allow_fish;
 bool game_over = false;
 bool backlight = true;
 bool stop_flag = false;
 bool end_game = false;
 bool end_game_flag = false;
-
+bool immortal = false;
+bool subway = false;
 
 // Main functions
 void setup() {
@@ -131,10 +148,6 @@ void setup() {
   jx.exponent(GJ_CUBIC);
   jx.deadzone(LOUD_STICK_DEADZONE);
 
-  // seaweeds[0][0] = START_SCREEN - 8;
-  // seaweeds[0][1] = 1;
-  // fish[0] = START_SCREEN;
-
   pinMode(4, INPUT_PULLUP);
   butt.attachClick(toggle_backlight);
   butt.attachDoubleClick(restart);
@@ -143,9 +156,29 @@ void setup() {
 }
 
 void loop() {
+  ulong start = millis();
+
+  if (jx.tick()) {
+    x = jx.value();
+  }
+  if (jy.tick()) {
+    y = jy.value();
+  }
+
   butt.tick();
   loud_tick();
-  game_tick();
+  main_tick();
+  cheatcode_tick();
+
+  if (subway) {
+    subway_tick();
+  }
+
+  ulong loop_time = millis() - start;
+  if (loop_time >= 50) {
+    Serial.print("Loop time: ");
+    Serial.println(loop_time);
+  }
 }
 
 
@@ -155,7 +188,7 @@ void loop() {
 * Second if handles blinking of the screen when game over
 * Third if handles game over after blinking 
 */
-void game_tick() {
+void main_tick() {
   ulong delta = millis() - last_time;
   if (!game_over && !end_game) {
     fix_jump();
@@ -165,6 +198,13 @@ void game_tick() {
       update_ticks();
 
       last_time = millis();
+      if (immortal) {
+        game_over = false;
+      }
+
+      if (subway) {
+        subway_tick();
+      }
     }
   } else if (game_over && delta >= speed) {
     if (blinks < BLINKS_COUNT) {
@@ -196,13 +236,13 @@ void update_entities() {
   bool sound_cond = hero[0] == FLOOR && prev_state == FLOOR;
   if (game_over) {
     screen.write(SHRIMP_DEAD);
-    tone(BUZZER_PIN, DEAD_SOUND, LOSE_SOUND_DURATION);
+    play_sound(DEAD_SOUND, LOSE_SOUND_DURATION);
   } else if (ticks % 2 == 0 && sound_cond) {  // Walking animation
     screen.write(SHRIMP_1);
-    tone(BUZZER_PIN, STEP_SOUND_A, STED_SOUND_DURAION);
+    play_sound(STEP_SOUND_A, STED_SOUND_DURAION);
   } else if (ticks % 2 == 1 && sound_cond) {
     screen.write(SHRIMP_2);
-    tone(BUZZER_PIN, STEP_SOUND_B, STED_SOUND_DURAION);
+    play_sound(STEP_SOUND_B, STED_SOUND_DURAION);
   } else {
     screen.write(SHRIMP_1);
   }
@@ -215,12 +255,12 @@ void toggle_backlight() {
   if (backlight) {
     screen.backlight();
     if (!game_over || blinks >= BLINKS_COUNT) {
-      tone(BUZZER_PIN, SCREEN_ON_SOUND, TOGGLE_SCREEN_SOUND_DURATION);
+      play_sound(SCREEN_ON_SOUND, TOGGLE_SCREEN_SOUND_DURATION);
     }
   } else {
     screen.noBacklight();
     if (!game_over || blinks >= BLINKS_COUNT) {
-      tone(BUZZER_PIN, SCREEN_OFF_SOUND, TOGGLE_SCREEN_SOUND_DURATION);
+      play_sound(SCREEN_OFF_SOUND, TOGGLE_SCREEN_SOUND_DURATION);
     }
   }
 }
@@ -251,30 +291,10 @@ void reset_types() {
   }
 }
 
-void restart() {
-  tone(BUZZER_PIN, START_SOUND, START_SOUND_DURATION);
-
-  screen.clear();
-  reset_types();
-
-  write_waves(0);
-  write_ground();
-  hero[0] = FLOOR;
-  randomSeed(analogRead(A2));
-
-  last_time = 0;
-  start_time = millis();
-  spawn_seaweed_tick = 0;
-  spawn_fish_tick = FISH_START;
-  ticks = 0;
-  jump_tick = 0;
-  jump_type = 0;
-  blinks = 0;
-  speed = initial_speed;
-  game_over = false;
-  end_game = false;
-  stop_flag = false;
-  end_game_flag = false;
+void play_sound(int freq, int duration) {
+  if (!subway) {
+    tone(BUZZER_PIN, freq, duration);
+  }
 }
 
 void set_PWM() {

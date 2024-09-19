@@ -8,24 +8,23 @@ void update_hero() {
     jump_tick = ticks;
 
     if (jump_type == JUMP_TYPE) {
-      tone(BUZZER_PIN, JUMP_SOUND, JUMP_SOUND_DURATION);
+      play_sound(JUMP_SOUND, JUMP_SOUND_DURATION);
     } else if (jump_type == BIG_JUMP_TYPE) {
-      tone(BUZZER_PIN, BIG_JUMP_SOUND, JUMP_SOUND_DURATION);
+      play_sound(BIG_JUMP_SOUND, JUMP_SOUND_DURATION);
     }
   } else if (hero[0] == JUMP && ticks - jump_tick >= JUMP_DURATION * j_coef) {
     hero[0] = FLOOR;
     jump_type = 0;
-    tone(BUZZER_PIN, LAND_SOUND, JUMP_SOUND_DURATION);
+    play_sound(LAND_SOUND, JUMP_SOUND_DURATION);
   }
 }
 
 void fix_jump() {
-  if (jump_type != BIG_JUMP_TYPE && jy.tick()) {
-    int j_val = -jy.value();
+  if (jump_type != BIG_JUMP_TYPE) {
 
-    if (j_val >= BIG_JUMP_START) {
+    if (y >= BIG_JUMP_START) {
       jump_type = BIG_JUMP_TYPE;
-    } else if (j_val > 0) {
+    } else if (y > 0) {
       jump_type = JUMP_TYPE;
     }
   }

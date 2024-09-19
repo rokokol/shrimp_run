@@ -1,5 +1,4 @@
 # Shrimp Run
-
 ![Пример работы](https://github.com/user-attachments/assets/6c254b7b-ca80-4d0b-bec4-64628b519906)
 ---
 ## О ПРОЕКТЕ 🦐
@@ -11,20 +10,31 @@
 - ⬆️⬆️ Высокий прыжок — **Целый свайп джойстика вверх**
 - 🔉 Убавить громкость — **Целый свайп джойстика влево**
 - 🔊 Увеличить громкость — **Целый свайп джойстика вправо**
+### ЧИТЫ 😈
+- 😇 Бессмертие — ⬆️ ⬆️ ⬇️ ⬇️ ⬅️ ➡️ ⬅️ ➡️
+- ⚰️ Воскрешение — ➡️ ⬅️ ⬆️ ⬆️ ⬆️
+- 🧹 Стереть все препятствия — ⬅️ ⬇️ ⬇️ ⬅️ ⬆️
+- ⭐ +100 рейтинга — ⬆️ ➡️ ⬇️ ⬅️ ⬅️ ➡️ ⬆️ ⬆️
+- ⚡ Sonic mode (суперскорость) — ➡️ ➡️ ➡️ ➡️ ⬇️
+- 💥 Sonic.EXE mode (ультраскорость) — ⬇️ ➡️ ➡️ ➡️ ➡️ ➡️ ➡️ ➡️
+- 🏃 Subway Surfers mode — ➡️ ➡️ ⬅️ ⬅️ ⬅️ ⬆️
+- 💀 Cursed mode — ⬆️ ➡️ ⬇️ ⬅️ ⬅️ ⬇️ ➡️ ⬆️
+---
 ### КАК СОБРАТЬ СХЕМУ? 🛠️
 ---
-![Схема](https://github.com/user-attachments/assets/b225e183-f310-4f7d-b984-e7e3c7611928)
+![Схема](https://github.com/user-attachments/assets/fe71e6ac-f14b-450d-88b0-d1ef3994d97f)
 ---
 ### ЗАВИСИМОСТИ 📦
 - 🔘 [OneButton](https://github.com/mathertel/OneButton)
 - 🖥️ [LiquidCrystal_I2C](https://github.com/johnrickman/LiquidCrystal_I2C)
 - 🕹️ [GyverJoy](https://github.com/GyverLibs/GyverJoy)
+- 🔊 [pitches](https://github.com/hibit-dev/buzzer)
 ---
 ## ПЛАНЫ ✅
 - [X] 🖼️ Переделать на LCD2004, улучшить графику
 - [X] 💦 Добавить ~~пузыри~~ рыбу — альтернатива птеродактилей в оригинале
 - [X] 🔊 Добавить звуковое сопровождение
-- [ ] 🪺 Remove Herobrine
+- [X] 🪺 Remove Herobrine
 - [ ] 🗃️ Сделать корпус, возможность взять с собой куда-либо
 ## ЗАКЛЮЧЕНИЕ 💯
 Ну, что тут сказать... Have fun!

@@ -32,10 +32,10 @@ void set_loud() {
 }
 
 void fix_loud() {
-  if (direction == 0 && jx.tick()) {
-    if (jx.value() > 0) {
+  if (direction == 0) {
+    if (x > 0) {
       direction = 1;
-    } else if (jx.value() < 0) {
+    } else if (x < 0) {
       direction = -1;
     }
   }
@@ -51,11 +51,11 @@ void loud_tick() {
     } else if (direction != 0) {
 
       if (loud_level >= MAX_LOUD_LEVEL) {
-        tone(BUZZER_PIN, CANNOT_CHANGE_LOUD_SOUND, CHANGE_LOUD_SOUND_DURATION);
+        play_sound(CANNOT_CHANGE_LOUD_SOUND, CHANGE_LOUD_SOUND_DURATION);
       } else if (direction > 0) {
-        tone(BUZZER_PIN, INCREASE_LOUD_SOUND, CHANGE_LOUD_SOUND_DURATION);
+        play_sound(INCREASE_LOUD_SOUND, CHANGE_LOUD_SOUND_DURATION);
       } else {
-        tone(BUZZER_PIN, DECREASE_LOUD_SOUND, CHANGE_LOUD_SOUND_DURATION);
+        play_sound(DECREASE_LOUD_SOUND, CHANGE_LOUD_SOUND_DURATION);
       }
 
       loud_level = constrain(loud_level + direction, MIN_LOUD_LEVEL, MAX_LOUD_LEVEL);

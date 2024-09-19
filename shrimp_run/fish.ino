@@ -5,6 +5,7 @@ void update_fish() {
     } else {
       move_fish(i);
       if (game_over) {
+        prev_speed = speed;
         speed = initial_speed;
         return;
       }

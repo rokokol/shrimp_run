@@ -1,15 +1,13 @@
-#include "easter_egg.h"
-
 void game_over_animation() {
   screen.setCursor(UPPER_MSG_INDENT, 0);
   if (blinks % 2 == 1) {
     screen.print("GAME");
     screen.setCursor(UPPER_MSG_INDENT + 6, 0);
     screen.print("OVER");
-    tone(BUZZER_PIN, BLINK_SOUND_A, LOSE_SOUND_DURATION);
+    play_sound(BLINK_SOUND_A, LOSE_SOUND_DURATION);
   } else {
     write_waves(UPPER_MSG_INDENT);
-    tone(BUZZER_PIN, BLINK_SOUND_B, LOSE_SOUND_DURATION);
+    play_sound(BLINK_SOUND_B, LOSE_SOUND_DURATION);
   }
 
   toggle_backlight();
@@ -27,7 +25,7 @@ void game_over_tip() {
   screen.write(GROUND);
   screen.print("RESTART");
   stop_flag = true;
-  tone(BUZZER_PIN, BLINK_SOUND_C, LOSE_SOUND_DURATION * 2);
+  play_sound(BLINK_SOUND_C, LOSE_SOUND_DURATION * 2);
 }
 
 void end_game_msg() {
@@ -39,7 +37,7 @@ void end_game_msg() {
   screen.setCursor(UPPER_MSG_INDENT + 8, 0);
   screen.print("IT");
   delay(2000);  // Specially for several jokes
-  tone(BUZZER_PIN, DEAD_SOUND, LOSE_SOUND_DURATION * 5);
+  play_sound(DEAD_SOUND, LOSE_SOUND_DURATION * 5);
   screen.setCursor(0, 3);
   screen.print("NOW");
   screen.setCursor(4, 3);
@@ -65,15 +63,44 @@ void update_ticks() {
 
   screen.home();
   ulong delta = millis() - start_time;
-  int score = (delta) / 1000;
+  int score = (delta) / 1000 + bonus_score;
 
   if (score > 999) {
     screen.write(243);  // Infinity symbol of people who lasted 17 minutes
     write_waves(1);
     end_game = true;
-    tone(BUZZER_PIN, END_GAME_SOUND, END_GAME_SOUND_DURATION);
+    play_sound(END_GAME_SOUND, END_GAME_SOUND_DURATION);
     delay(END_GAME_SOUND_DURATION);
   } else {
     screen.print(score);
   }
+}
+
+void restart() {
+  play_sound(START_SOUND, START_SOUND_DURATION);
+
+  screen.clear();
+  reset_types();
+
+  write_waves(0);
+  write_ground();
+  hero[0] = FLOOR;
+  randomSeed(analogRead(A2));
+
+  last_time = 0;
+  start_time = millis();
+  spawn_seaweed_tick = 0;
+  spawn_fish_tick = FISH_START;
+  ticks = 0;
+  jump_tick = 0;
+  jump_type = 0;
+  blinks = 0;
+  speed = initial_speed;
+  game_over = false;
+  end_game = false;
+  stop_flag = false;
+  end_game_flag = false;
+  prev_speed = 0;
+  speed = initial_speed;
+  bonus_score = 0;
 }

@@ -64,6 +64,28 @@ byte clear_code[] = {
   UP
 };
 
+byte* codes[] = {
+  immortal_code,
+  resurrect_code,
+  speed_boost_code,
+  ultra_speed_boost_code,
+  subway_code,
+  shift_sprites_code,
+  bonus_score_code,
+  clear_code
+};
+
+size_t sizes[] = {
+  sizeof(immortal_code),
+  sizeof(resurrect_code),
+  sizeof(speed_boost_code),
+  sizeof(ultra_speed_boost_code),
+  sizeof(subway_code),
+  sizeof(shift_sprites_code),
+  sizeof(bonus_score_code),
+  sizeof(clear_code)
+};
+
 void cheatcode_tick() {
   ulong delta = millis() - last_code_time;
   update_queue();
@@ -77,7 +99,9 @@ void cheatcode_tick() {
 
     int cheats_count = sizeof(cheats_check) / sizeof(cheats_check[0]);
     for (int i = 0; i < cheats_count; i++) {
-      if (cheats_check[i]()) {
+      bool res = check_code(codes[i], sizes[i], cheats_check[i]);
+
+      if (res) {
         play_sound(CHEATCODE_SOUND, CHEATCODE_SOUND_DURATION);
         toggle_backlight();
         activated = true;
@@ -124,13 +148,20 @@ void update_queue() {
   }
 }
 
-bool immortal_check() {
-  for (int i = 0; i < sizeof(immortal_code); i++) {
-    if (immortal_code[i] != actions[i]) {
+bool check_code(byte* code, size_t code_size, bool (*function)()) {
+  for (int i = 0; i < code_size; i++) {
+    int j = i + QUEUE_LEN - code_size;
+    if (code[i] != actions[j]) {
       return false;
     }
   }
 
+  actions[QUEUE_LEN - 1] = NONE;
+
+  return function();
+}
+
+bool immortal_check() {
   immortal = !immortal;
 
   actions[QUEUE_LEN - 1] = NONE;
@@ -138,15 +169,6 @@ bool immortal_check() {
 }
 
 bool resurrect_check() {
-  for (int i = 0; i < sizeof(resurrect_code); i++) {
-    int j = i + QUEUE_LEN - sizeof(resurrect_code);
-    if (resurrect_code[i] != actions[j]) {
-      return false;
-    }
-  }
-
-  actions[QUEUE_LEN - 1] = NONE;
-
   if (game_over) {
     game_over = false;
     speed = prev_speed;
@@ -159,15 +181,6 @@ bool resurrect_check() {
 }
 
 bool speed_boost_check() {
-  for (int i = 0; i < sizeof(speed_boost_code); i++) {
-    int j = i + QUEUE_LEN - sizeof(speed_boost_code);
-    if (speed_boost_code[i] != actions[j]) {
-      return false;
-    }
-  }
-
-  actions[QUEUE_LEN - 1] = NONE;
-
   if (speed_bost) {
     initial_speed = INITIAL_SPEED;
     speed_bost = false;
@@ -181,15 +194,6 @@ bool speed_boost_check() {
 }
 
 bool ultra_speed_boost_check() {
-  for (int i = 0; i < sizeof(ultra_speed_boost_code); i++) {
-    int j = i + QUEUE_LEN - sizeof(ultra_speed_boost_code);
-    if (ultra_speed_boost_code[i] != actions[j]) {
-      return false;
-    }
-  }
-
-  actions[QUEUE_LEN - 1] = NONE;
-
   if (speed_bost) {
     initial_speed = INITIAL_SPEED;
     speed_bost = false;
@@ -203,30 +207,12 @@ bool ultra_speed_boost_check() {
 }
 
 bool subway_check() {
-  for (int i = 0; i < sizeof(subway_code); i++) {
-    int j = i + QUEUE_LEN - sizeof(subway_code);
-    if (subway_code[i] != actions[j]) {
-      return false;
-    }
-  }
-
-  actions[QUEUE_LEN - 1] = NONE;
-
   subway = !subway;
 
   return true;
 }
 
 bool shift_sprites_check() {
-  for (int i = 0; i < sizeof(shift_sprites_code); i++) {
-    int j = i + QUEUE_LEN - sizeof(shift_sprites_code);
-    if (shift_sprites_code[i] != actions[j]) {
-      return false;
-    }
-  }
-
-  actions[QUEUE_LEN - 1] = NONE;
-
   texture_shift += 1;
   init_chars(screen);
 
@@ -234,36 +220,17 @@ bool shift_sprites_check() {
 }
 
 bool bonus_score_check() {
-  for (int i = 0; i < sizeof(bonus_score_code); i++) {
-    int j = i + QUEUE_LEN - sizeof(bonus_score_code);
-    if (bonus_score_code[i] != actions[j]) {
-      return false;
-    }
-  }
-
-  actions[QUEUE_LEN - 1] = NONE;
-
   bonus_score += 100;
 
   return true;
 }
 
 bool clear_check() {
-  for (int i = 0; i < sizeof(clear_code); i++) {
-    int j = i + QUEUE_LEN - sizeof(clear_code);
-    if (clear_code[i] != actions[j]) {
-      return false;
-    }
-  }
-
-  actions[QUEUE_LEN - 1] = NONE;
-
   reset_types();
   screen.setCursor(0, 1);
   clear_line();
   screen.setCursor(0, 2);
   clear_line();
-
   return true;
 }
 

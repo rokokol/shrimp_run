@@ -26,7 +26,6 @@ void hide_loud() {
 
 void set_loud() {
   int value = map(loud_level, MIN_LOUD_LEVEL, MAX_LOUD_LEVEL, 0, 255);
-  Serial.println(value);
   analogWrite(BUZZER_VCC_PIN, value);
   show_loud();
 }

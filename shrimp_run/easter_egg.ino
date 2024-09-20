@@ -196,8 +196,8 @@ void easter_egg() {
 void subway_tick() {
   ulong delta = millis() - subway_time;
   int duration = 1000 / subway_durations[subway_note];
-  if (delta >= duration * 1.3) {
-    tone(BUZZER_PIN, subway_melody[subway_note], duration);
+  if (delta >= duration * 1.2) {
+    tone(BUZZER_PIN, subway_melody[subway_note], duration * 1.3);
 
     int size = sizeof(subway_durations) / sizeof(int);
     subway_note = (subway_note + 1) % size;

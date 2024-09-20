@@ -31,6 +31,7 @@
 #define LEFT 3
 #define RIGHT 4
 #define QUEUE_LEN 8
+#define MILLS_FLOOR_TEST 30
 
 #define HERO_POS_X 3
 #define FLOOR 2
@@ -175,7 +176,7 @@ void loop() {
   }
 
   ulong loop_time = millis() - start;
-  if (loop_time >= 50) {
+  if (loop_time >= MILLS_FLOOR_TEST) {
     Serial.print("Loop time: ");
     Serial.println(loop_time);
   }

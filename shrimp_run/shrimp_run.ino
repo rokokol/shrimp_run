@@ -7,7 +7,7 @@
 
 // Constants
 #define START_SCREEN 19
-#define BUTTON_PIN 2
+#define BUTTON_PIN 3
 #define JX_PIN A1
 #define JY_PIN A0
 #define BUZZER_VCC_PIN 9
